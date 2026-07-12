@@ -13,7 +13,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 
-export default function MainSections() {
+export default function AboutPage() {
   // SECTION A: Core Functional Grid Array Mapping Configuration
   const featureCards = [
     {
