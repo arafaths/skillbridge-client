@@ -15,6 +15,8 @@ import {
   FiLogOut,
   FiHome,
 } from 'react-icons/fi';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 // User Data Type Definition
 interface UserProfile {
@@ -30,6 +32,14 @@ export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const [isMobileProfileOpen, setIsMobileProfileOpen] =
     useState<boolean>(false);
+  const pathname = usePathname();
+  
+  const navItems = [
+    { name: 'Home', href: '/' },
+    { name: 'Explore Projects', href: '/projects' },
+    { name: 'About', href: '/about' },
+    { name: 'Contact', href: '/contact' },
+  ];
 
   // Mock Profile Info
   const user: UserProfile = {
@@ -59,27 +69,33 @@ export default function Navbar() {
 
         {/* DESKTOP NAVIGATION LINKS */}
         <div className="hidden md:flex items-center space-x-8 text-sm font-medium">
-          {['Home', 'Explore Projects', 'About', 'Contact'].map(
-            (item, index) => (
-              <a
-                key={index}
-                href="#"
-                className={`relative py-1 transition-colors duration-200 ${
-                  item === 'Home'
+          {navItems.map(item => {
+            // 3. Current URL-er sathe match kore active state nirnoy
+            const isActive = pathname === item.href;
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`relative py-1 transition-colors duration-200 font-medium ${
+                  isActive
                     ? 'text-[#00bfa5]'
                     : 'text-[#94a3b8] hover:text-white'
                 }`}
               >
-                {item}
-                {item === 'Home' && (
+                {item.name}
+
+                {/* 4. Active item-er niche smooth sliding indicator */}
+                {isActive && (
                   <motion.div
-                    layoutId="underline"
+                    layoutId="desktop-nav-underline"
                     className="absolute bottom-0 left-0 w-full h-[2px] bg-[#00bfa5]"
+                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                   />
                 )}
-              </a>
-            ),
-          )}
+              </Link>
+            );
+          })}
         </div>
 
         {/* DESKTOP RIGHT ACTIONS */}
@@ -241,30 +257,30 @@ export default function Navbar() {
               </div>
 
               <div className="flex flex-col space-y-5 text-base font-medium">
-                <a
-                  href="#"
+                <Link
+                  href={'/'}
                   className="flex items-center space-x-3 text-[#00bfa5]"
                 >
                   <FiHome size={18} /> <span>Home</span>
-                </a>
-                <a
-                  href="#"
+                </Link>
+                <Link
+                  href={'/projects'}
                   className="flex items-center space-x-3 text-[#94a3b8] hover:text-white"
                 >
                   <FiBriefcase size={18} /> <span>Explore Projects</span>
-                </a>
-                <a
-                  href="#"
+                </Link>
+                <Link
+                  href={'/about'}
                   className="flex items-center space-x-3 text-[#94a3b8] hover:text-white"
                 >
                   <FiUser size={18} /> <span>About</span>
-                </a>
-                <a
-                  href="#"
+                </Link>
+                <Link
+                  href={'/contact'}
                   className="flex items-center space-x-3 text-[#94a3b8] hover:text-white"
                 >
                   <FiMail size={18} /> <span>Contact</span>
-                </a>
+                </Link>
               </div>
             </div>
 
