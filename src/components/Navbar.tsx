@@ -6,7 +6,6 @@ import {
   FiSearch,
   FiMenu,
   FiX,
-  FiBell,
   FiPlus,
   FiUser,
   FiBriefcase,
@@ -16,24 +15,29 @@ import {
   FiHome,
 } from 'react-icons/fi';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-
-// User Data Type Definition
-interface UserProfile {
-  name: string;
-  role: string;
-  avatar: string;
-}
+import { usePathname, useRouter } from 'next/navigation';
+import { authClient } from '@/lib/auth-client';
+import { toast } from 'sonner';
 
 export default function Navbar() {
-  // States to handle logged in user simulation and UI interactions
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false); // Toggle to true/false to test both UI views
   const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const [isMobileProfileOpen, setIsMobileProfileOpen] =
     useState<boolean>(false);
+  const [imageError, setImageError] = useState<boolean>(false);
+
+  const router = useRouter();
   const pathname = usePathname();
-  
+
+  // BetterAuth Session Hook
+  const { data: session } = authClient.useSession();
+  const user = session?.user;
+
+  const getUserInitial = () => {
+    if (!user?.name) return 'U';
+    return user.name.trim().charAt(0).toUpperCase();
+  };
+
   const navItems = [
     { name: 'Home', href: '/' },
     { name: 'Explore Projects', href: '/projects' },
@@ -41,19 +45,34 @@ export default function Navbar() {
     { name: 'Contact', href: '/contact' },
   ];
 
-  // Mock Profile Info
-  const user: UserProfile = {
-    name: 'Arafat H.',
-    role: 'Full Stack Developer',
-    avatar:
-      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100&h=100', // Placeholder avatar matching layout
+  // Sign Out Handler
+  const handleSignOut = async () => {
+    const toastId = toast.loading('Signing out...');
+
+    try {
+      await authClient.signOut({
+        fetchOptions: {
+          onSuccess: () => {
+            toast.success('Successfully signed out!', { id: toastId });
+            router.push('/login');
+          },
+          onError: ctx => {
+            toast.error(ctx.error.message || 'Failed to sign out', {
+              id: toastId,
+            });
+          },
+        },
+      });
+    } catch (error) {
+      toast.error('An unexpected error occurred.', { id: toastId });
+    }
   };
 
   return (
-    <nav className="sticky top-0 z-50 bg-[#060b13] border-b border-[#0d1527] px-4 py-3 md:px-8">
+    <nav className="sticky top-0 z-50 bg-[#060b13] border-b border-[#0d1527] px-4 py-3 md:px-8 select-none">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* LOGO SECTION */}
-        <div className="flex items-center space-x-2 cursor-pointer">
+        <Link href="/" className="flex items-center space-x-2 cursor-pointer">
           <div className="w-8 h-8 bg-gradient-to-tr from-[#00bfa5] to-[#00796b] rounded-lg flex items-center justify-center transform rotate-45 shadow-lg shadow-[#00bfa5]/20">
             <span className="text-white font-black text-xl -rotate-45">S</span>
           </div>
@@ -65,12 +84,11 @@ export default function Navbar() {
               Connect Skills with Opportunities
             </p>
           </div>
-        </div>
+        </Link>
 
         {/* DESKTOP NAVIGATION LINKS */}
         <div className="hidden md:flex items-center space-x-8 text-sm font-medium">
           {navItems.map(item => {
-            // 3. Current URL-er sathe match kore active state nirnoy
             const isActive = pathname === item.href;
 
             return (
@@ -85,7 +103,7 @@ export default function Navbar() {
               >
                 {item.name}
 
-                {/* 4. Active item-er niche smooth sliding indicator */}
+                {/* Active item sliding indicator */}
                 {isActive && (
                   <motion.div
                     layoutId="desktop-nav-underline"
@@ -107,38 +125,48 @@ export default function Navbar() {
             <FiSearch size={20} />
           </button>
 
-          {!isLoggedIn ? (
-            /* Logged Out Buttons */
+          {!user ? (
+            /* Logged Out View */
             <div className="flex items-center space-x-4 text-sm font-medium">
               <Link
-                href={'/login'}
+                href="/login"
                 className="text-[#94a3b8] hover:text-white px-5 py-2 rounded-md border border-[#1e293b] hover:bg-[#0f172a] transition-all"
               >
                 Login
               </Link>
               <Link
-                href={'/register'}
+                href="/register"
                 className="bg-[#00bfa5] text-[#060b13] px-5 py-2 rounded-md font-semibold hover:bg-[#00a38c] transition-all shadow-md shadow-[#00bfa5]/20"
               >
                 Register
               </Link>
             </div>
           ) : (
-            /* Logged In Buttons & Profile Dropdown */
+            /* Logged In View */
             <div className="flex items-center space-x-4 relative">
               <button className="bg-[#00bfa5]/10 text-[#00bfa5] border border-[#00bfa5]/20 px-4 py-2 rounded-md flex items-center space-x-2 hover:bg-[#00bfa5]/20 transition-all font-medium text-sm">
                 <FiPlus size={16} />
                 <span>Add Project</span>
               </button>
 
-              {/* User Avatar & Dropdown */}
+              {/* User Avatar & Dropdown Controller */}
               <div className="relative">
-                <img
-                  src={user.avatar}
-                  alt="Profile"
-                  className="w-9 h-9 rounded-full border-2 border-[#00bfa5] cursor-pointer object-cover"
-                  onClick={() => setIsProfileOpen(!isProfileOpen)}
-                />
+                {user.image && !imageError ? (
+                  <img
+                    src={user.image}
+                    alt="Profile"
+                    onError={() => setImageError(true)}
+                    className="w-9 h-9 rounded-full border-2 border-[#00bfa5] cursor-pointer object-cover"
+                    onClick={() => setIsProfileOpen(!isProfileOpen)}
+                  />
+                ) : (
+                  <div
+                    onClick={() => setIsProfileOpen(!isProfileOpen)}
+                    className="w-9 h-9 rounded-full border-2 border-[#00bfa5] bg-[#00bfa5]/10 text-[#00bfa5] font-bold text-sm flex items-center justify-center cursor-pointer hover:bg-[#00bfa5]/20 transition-all"
+                  >
+                    {getUserInitial()}
+                  </div>
+                )}
 
                 {/* Desktop Dropdown Menu */}
                 <AnimatePresence>
@@ -177,7 +205,7 @@ export default function Navbar() {
                       <button
                         onClick={() => {
                           setIsProfileOpen(false);
-                          setIsLoggedIn(false);
+                          handleSignOut();
                         }}
                         className="w-full flex items-center space-x-3 px-4 py-2.5 text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all"
                       >
@@ -193,9 +221,8 @@ export default function Navbar() {
 
         {/* MOBILE VIEW TOGGLES */}
         <div className="md:hidden flex items-center space-x-3">
-          {isLoggedIn && (
+          {user && (
             <>
-              {/* Mini Quick Add */}
               <button
                 className="bg-[#00bfa5] text-[#060b13] p-1.5 rounded-md"
                 aria-label="Add project fast"
@@ -203,24 +230,35 @@ export default function Navbar() {
                 <FiPlus size={18} />
               </button>
 
-              {/* Small Avatar to trigger full mobile profile panel */}
-              <img
-                src={user.avatar}
-                alt="Profile"
-                className="w-7 h-7 rounded-full border border-[#00bfa5] object-cover"
-                onClick={() => {
-                  setIsMobileProfileOpen(true);
-                  setIsMobileMenuOpen(false);
-                }}
-              />
+              {user.image && !imageError ? (
+                <img
+                  src={user.image}
+                  alt="Profile"
+                  onError={() => setImageError(true)}
+                  className="w-7 h-7 rounded-full border border-[#00bfa5] object-cover"
+                  onClick={() => {
+                    setIsMobileProfileOpen(true);
+                    setIsMobileMenuOpen(false);
+                  }}
+                />
+              ) : (
+                <div
+                  onClick={() => {
+                    setIsMobileProfileOpen(true);
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="w-7 h-7 rounded-full border border-[#00bfa5] bg-[#00bfa5]/10 text-[#00bfa5] font-bold text-xs flex items-center justify-center cursor-pointer"
+                >
+                  {getUserInitial()}
+                </div>
+              )}
             </>
           )}
 
-          {/* Menu Icon (Burger/X) */}
           <button
             className="text-white p-1"
             onClick={() => {
-              if (isLoggedIn && isMobileProfileOpen) {
+              if (user && isMobileProfileOpen) {
                 setIsMobileProfileOpen(false);
               } else {
                 setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -233,9 +271,9 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* --- MOBILE FULL SCREEN OVERLAYS (Framer Motion) --- */}
+      {/* --- MOBILE FULL SCREEN OVERLAYS --- */}
 
-      {/* 1. Mobile Main Menu Overlay (Logged Out/Navigation) */}
+      {/* 1. Mobile Navigation Overlay */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
@@ -258,61 +296,61 @@ export default function Navbar() {
 
               <div className="flex flex-col space-y-5 text-base font-medium">
                 <Link
-                  href={'/'}
-                  className="flex items-center space-x-3 text-[#00bfa5]"
+                  href="/"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`flex items-center space-x-3 ${pathname === '/' ? 'text-[#00bfa5]' : 'text-[#94a3b8]'}`}
                 >
                   <FiHome size={18} /> <span>Home</span>
                 </Link>
                 <Link
-                  href={'/projects'}
-                  className="flex items-center space-x-3 text-[#94a3b8] hover:text-white"
+                  href="/projects"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`flex items-center space-x-3 ${pathname === '/projects' ? 'text-[#00bfa5]' : 'text-[#94a3b8]'}`}
                 >
                   <FiBriefcase size={18} /> <span>Explore Projects</span>
                 </Link>
                 <Link
-                  href={'/about'}
-                  className="flex items-center space-x-3 text-[#94a3b8] hover:text-white"
+                  href="/about"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`flex items-center space-x-3 ${pathname === '/about' ? 'text-[#00bfa5]' : 'text-[#94a3b8]'}`}
                 >
                   <FiUser size={18} /> <span>About</span>
                 </Link>
                 <Link
-                  href={'/contact'}
-                  className="flex items-center space-x-3 text-[#94a3b8] hover:text-white"
+                  href="/contact"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`flex items-center space-x-3 ${pathname === '/contact' ? 'text-[#00bfa5]' : 'text-[#94a3b8]'}`}
                 >
                   <FiMail size={18} /> <span>Contact</span>
                 </Link>
               </div>
             </div>
 
-            {!isLoggedIn && (
+            {!user && (
               <div className="flex flex-col space-y-3 mb-6">
-                <button
-                  onClick={() => {
-                    setIsLoggedIn(true);
-                    setIsMobileMenuOpen(false);
-                  }}
+                <Link
+                  href="/login"
+                  onClick={() => setIsMobileMenuOpen(false)}
                   className="w-full text-[#94a3b8] border border-[#1e293b] py-2.5 rounded-lg text-center font-medium"
                 >
                   Login
-                </button>
-                <button
-                  onClick={() => {
-                    setIsLoggedIn(true);
-                    setIsMobileMenuOpen(false);
-                  }}
+                </Link>
+                <Link
+                  href="/register"
+                  onClick={() => setIsMobileMenuOpen(false)}
                   className="w-full bg-[#00bfa5] text-[#060b13] py-2.5 rounded-lg text-center font-semibold"
                 >
                   Register
-                </button>
+                </Link>
               </div>
             )}
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* 2. Mobile User Profile Panel Overlay (Logged In Drawer) */}
+      {/* 2. Mobile User Profile Panel Overlay */}
       <AnimatePresence>
-        {isLoggedIn && isMobileProfileOpen && (
+        {user && isMobileProfileOpen && (
           <motion.div
             initial={{ opacity: 0, x: '100%' }}
             animate={{ opacity: 1, x: 0 }}
@@ -333,24 +371,29 @@ export default function Navbar() {
                 </button>
               </div>
 
-              {/* Profile Card snippet from design */}
+              {/* Drawer Profile Heading (With Image Fallback Fix) */}
               <div className="flex items-center space-x-3 bg-[#131f35]/50 p-3 rounded-xl border border-[#1e293b] mb-6">
-                <img
-                  src={user.avatar}
-                  alt={user.name}
-                  className="w-10 h-10 rounded-full object-cover border border-[#00bfa5]"
-                />
+                {user.image && !imageError ? (
+                  <img
+                    src={user.image}
+                    alt={user.name}
+                    onError={() => setImageError(true)}
+                    className="w-10 h-10 rounded-full object-cover border border-[#00bfa5]"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full border border-[#00bfa5] bg-[#00bfa5]/10 text-[#00bfa5] font-bold flex items-center justify-center">
+                    {getUserInitial()}
+                  </div>
+                )}
                 <div>
-                  <h4 className="text-white text-sm font-semibold leading-none">
+                  <h4 className="text-white text-sm font-semibold leading-none mb-1">
                     {user.name}
                   </h4>
-                  <span className="text-[#64748b] text-[11px]">
-                    {user.role}
-                  </span>
+                  <span className="text-[#64748b] text-[11px]">Freelancer</span>
                 </div>
               </div>
 
-              {/* Navigation */}
+              {/* Navigation Options */}
               <div className="flex flex-col space-y-4 text-sm text-[#94a3b8] font-medium">
                 <button className="flex items-center space-x-3 hover:text-white text-left">
                   <FiUser size={18} /> <span>My Profile</span>
@@ -371,7 +414,7 @@ export default function Navbar() {
               <button
                 onClick={() => {
                   setIsMobileProfileOpen(false);
-                  setIsLoggedIn(false);
+                  handleSignOut();
                 }}
                 className="w-full flex items-center space-x-3 text-rose-500 font-medium text-sm"
               >
