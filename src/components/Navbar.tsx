@@ -116,12 +116,12 @@ export default function Navbar() {
               >
                 Login
               </button>
-              <button
-                onClick={() => setIsLoggedIn(true)}
+              <Link
+                href={'/register'}
                 className="bg-[#00bfa5] text-[#060b13] px-5 py-2 rounded-md font-semibold hover:bg-[#00a38c] transition-all shadow-md shadow-[#00bfa5]/20"
               >
                 Register
-              </button>
+              </Link>
             </div>
           ) : (
             /* Logged In Buttons & Profile Dropdown */
