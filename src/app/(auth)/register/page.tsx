@@ -57,6 +57,7 @@ export default function RegisterPage() {
     if (!isFormValid) return;
 
     setLoading(true);
+    const toastId = toast.loading('Authenticating credentials...');
     setErrorMsg('');
 
     try {
@@ -70,14 +71,21 @@ export default function RegisterPage() {
       });
 
       if (data) {
-        toast.success('Account created successfully!');
+        toast.success('Account created successfully!', { id: toastId });
         router.push('/');
       }
 
       if (error) {
+        toast.error(
+          error.message || 'Something went wrong. Please try again.',
+          { id: toastId },
+        );
         setErrorMsg(error.message || 'Something went wrong. Please try again.');
       }
     } catch (err) {
+      toast.error('An unexpected error occurred.', {
+        id: toastId,
+      });
       setErrorMsg('An unexpected error occurred.');
     } finally {
       setLoading(false);

@@ -110,12 +110,12 @@ export default function Navbar() {
           {!isLoggedIn ? (
             /* Logged Out Buttons */
             <div className="flex items-center space-x-4 text-sm font-medium">
-              <button
-                onClick={() => setIsLoggedIn(true)}
+              <Link
+                href={'/login'}
                 className="text-[#94a3b8] hover:text-white px-5 py-2 rounded-md border border-[#1e293b] hover:bg-[#0f172a] transition-all"
               >
                 Login
-              </button>
+              </Link>
               <Link
                 href={'/register'}
                 className="bg-[#00bfa5] text-[#060b13] px-5 py-2 rounded-md font-semibold hover:bg-[#00a38c] transition-all shadow-md shadow-[#00bfa5]/20"
