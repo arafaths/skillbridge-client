@@ -1,4 +1,5 @@
 import FAQ from '@/components/Home/FAQ';
+import FeaturedProjects from '@/components/Home/FeaturedProjects';
 import FreelanceCategories from '@/components/Home/FreelanceCategories';
 import Hero from '@/components/Home/Hero';
 import HeroCTA from '@/components/Home/HeroCTA';
@@ -13,6 +14,7 @@ const page = () => {
     <>
       <Hero />
       <TrustedCompanies />
+      <FeaturedProjects />
       <FreelanceCategories />
       <WhyChooseUs />
       <HowItWorks />
