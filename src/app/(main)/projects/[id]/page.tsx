@@ -76,7 +76,7 @@ export default function ProjectDetailsPage() {
   useEffect(() => {
     const fetchProject = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/projects/${id}`);
+        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}projects/${id}`);
 
         setProject(res.data.data);
       } catch (error) {
@@ -94,7 +94,7 @@ export default function ProjectDetailsPage() {
   useEffect(() => {
     if (!project) return;
     axios
-      .get(`http://localhost:5000/projects/related/${project._id}`)
+      .get(`${process.env.NEXT_PUBLIC_API_URL}projects/related/${project._id}`)
       .then(res => {
         setRelatedProjects(res.data.data);
       })

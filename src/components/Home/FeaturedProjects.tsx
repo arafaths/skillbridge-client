@@ -55,7 +55,9 @@ export default function FeaturedProjects() {
   useEffect(() => {
     const fetchFeaturedProjects = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/projects/featured');
+        const res = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_URL}projects/featured`,
+        );
 
         setProjects(res.data.data);
       } catch (error) {

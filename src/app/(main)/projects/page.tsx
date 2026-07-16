@@ -49,7 +49,7 @@ export default function ProjectsPage() {
     try {
       setLoading(true);
 
-      const res = await axios.get('http://localhost:5000/projects', {
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}projects`, {
         params: {
           search: searchQuery,
           category:
